@@ -1,0 +1,702 @@
+---
+title: "Target spot"
+author: "Ricardo Gomes Tomáz"
+format: 
+  html:
+    code-fold: false
+    smooth-scroll: true
+    fig-width: 16
+    fig-height: 10
+    css: styles.css
+    self-contained: true
+    df-print: paged
+    #code-tools:
+      #source: true
+      #toggle: true
+      #caption: "Source code"
+theme: "lumen"
+toc: true
+toc-location: left
+toc-depth: 10
+fontcolor: "black" # {html} Color of text.
+linkcolor: "#007FFF" # {html, pdf, beamer} Color of link text.
+reference-location: "margin"
+colortheme: "black"
+highlight: monochrome
+warning: false
+cache: true
+---
+
+# Packages
+
+```{r,warning = FALSE, message = FALSE, echo = TRUE}
+
+library(dplyr)
+library(purrr)
+library(gsheet)
+library(raster)
+library(ncdf4)
+library(lubridate)
+library(readxl)
+library(writexl)
+library(tidyverse)
+library(ggplot2)
+library(INLA)
+library(caret)
+library(inlabru)
+library(PresenceAbsence)
+```
+
+```{r}
+ma2 <- gsheet2tbl("https://docs.google.com/spreadsheets/d/1j0WZXtJsSMN1MAbmkppnCMnr5d9LnsxV/edit?usp=sharing&ouid=112586075609758894128&rtpof=true&sd=true")
+```
+
+```{r}
+ma3 = ma2 %>% 
+  filter(year == 2025) %>% 
+  filter(Source == "Claudia")
+
+ma3 <- ma3 %>%
+  mutate(
+    pd_90 = planting_date + 90)
+
+ma3$id <- c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)
+```
+
+
+# Nasapower - Claudia 90
+
+```{r,eval = FALSE, echo = TRUE}
+
+library(janitor)
+
+
+# IMPORTING DATA FROM NASAPOWER AND CREATING A NEW DATAFRAME WITH THE WEATHER DATA
+library(nasapower)
+box <- data.frame()
+
+# Loop para extrair dados climáticos para cada estudo
+for(i in 1:nrow(ma3)) {
+
+  # Obter os dados climáticos usando nasapower
+  lil_nasa <- get_power(
+    community = "ag",
+    temporal_api = "daily",
+    dates = c(ma3$planting_date[i], ma3$pd_90[i]), # Data de plantio e 140 dias depois
+    lonlat = c(ma3$longitude[i], ma3$lat[i]),            # Longitude e Latitude
+    pars = c("T2M", "RH2M", "PRECTOTCORR", "T2M_MAX", "T2M_MIN", "T2MDEW") # Parâmetros desejados
+  ) %>%
+    # Adicionar colunas de identificação ao dataframe
+    mutate(
+      id = ma3$id[i],
+      location = ma3$location[i],  # Adiciona a localização
+      state = ma3$state[i], 
+      mean_sev = ma3$mean_sev[i],# Adiciona o estado
+      year = format(as.Date(ma3$planting_date[i]), "%Y") # Adiciona o ano a partir da data de plantio
+    )
+
+  # Combina os dados atuais com os anteriores
+  box <- bind_rows(box, lil_nasa)
+}
+
+#write_xlsx(box, "data/weather_nasa.xlsx")
+
+wd_f90 = box
+wd_f90$wd_90 <- rep(0:90, times = 19)
+wd_f90$mean_sev = wd_f90$mean_sev/100
+
+
+wd_f90 = wd_f90 %>% #wd_f90
+  dplyr::filter(wd_90 >= 0 & wd_90 <= 40) %>% 
+  group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M = mean(T2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev)
+    )%>% 
+  dplyr::select(-id)
+```
+
+
+# Nasapower - Bio 90
+
+```{r,eval = FALSE, echo = TRUE}
+
+ma4 = ma2 %>% 
+  filter(Source == "Bio")
+
+ma4 <- ma4 %>%
+  dplyr::mutate(
+    pd_90 = planting_date + 90)
+
+ma4$id <- c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)
+
+ma4$mean_sev = ma4$mean_sev/100
+
+library(janitor)
+
+
+# IMPORTING DATA FROM NASAPOWER AND CREATING A NEW DATAFRAME WITH THE WEATHER DATA
+library(nasapower)
+box3 <- data.frame()
+
+# Loop para extrair dados climáticos para cada estudo
+for(i in 1:nrow(ma4)) {
+
+  # Obter os dados climáticos usando nasapower
+  lil_nasa <- get_power(
+    community = "ag",
+    temporal_api = "daily",
+    dates = c(ma4$planting_date[i], ma4$pd_90[i]), # Data de plantio e 140 dias depois
+    lonlat = c(ma4$longitude[i], ma4$lat[i]),            # Longitude e Latitude
+    pars = c("T2M", "RH2M", "PRECTOTCORR", "T2M_MAX", "T2M_MIN", "T2MDEW") # Parâmetros desejados
+  ) %>%
+    # Adicionar colunas de identificação ao dataframe
+    mutate(
+      id = ma4$id[i],
+      location = ma4$location[i],  # Adiciona a localização
+      state = ma4$state[i],        # Adiciona o estado
+      mean_sev = ma4$mean_sev[i],
+      year = format(as.Date(ma4$planting_date[i]), "%Y") # Adiciona o ano a partir da data de plantio
+    )
+
+  # Combina os dados atuais com os anteriores
+  box3 <- bind_rows(box3, lil_nasa)
+}
+
+#write_xlsx(box, "data/weather_nasa.xlsx")
+
+wd_f90_bio = box3
+wd_f90_bio$wd_90 <- rep(0:90, times = 21)
+
+wd_f90_bio = wd_f90_bio %>% #wd_f90
+  dplyr::filter(wd_90 >= 0 & wd_90 <= 40) %>% 
+  group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M = mean(T2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev)
+    )%>% 
+  dplyr::select(-id)
+```
+
+```{r}
+#wd_b90_bio = rbind(wd_f90_bio,wd_f90)
+
+#write_xlsx(wd_b90_bio,"data/wd_f90.xlsx")
+wd_b90_bio = read_xlsx("data/wd_f90.xlsx")
+```
+# Nasapower - All epidemics
+
+```{r,eval = FALSE, echo = TRUE}
+
+ma2 = ma2 %>%
+  dplyr::mutate(
+    pd_90 = planting_date + 90)
+
+ma2$id = 1:254
+
+# IMPORTING DATA FROM NASAPOWER AND CREATING A NEW DATAFRAME WITH THE WEATHER DATA
+library(nasapower)
+box <- data.frame()
+
+# Loop para extrair dados climáticos para cada estudo
+for(i in 1:nrow(ma2)) {
+
+  # Obter os dados climáticos usando nasapower
+  lil_nasa <- get_power(
+    community = "ag",
+    temporal_api = "daily",
+    dates = c(ma2$planting_date[i], ma2$pd_90[i]), # Data de plantio e 140 dias depois
+    lonlat = c(ma2$longitude[i], ma2$lat[i]),            # Longitude e Latitude
+    pars = c("T2M", "RH2M", "PRECTOTCORR", "T2M_MAX", "T2M_MIN", "T2MDEW") # Parâmetros desejados
+  ) %>%
+    # Adicionar colunas de identificação ao dataframe
+    mutate(
+      id = ma2$id[i],
+      location = ma2$location[i],  # Adiciona a localização
+      state = ma2$state[i],        # Adiciona o estado
+      mean_sev = ma2$mean_sev[i],
+      planting_date = ma2$planting_date[i],
+      year = format(as.Date(ma2$planting_date[i]), "%Y") # Adiciona o ano a partir da data de plantio
+    )
+
+  # Combina os dados atuais com os anteriores
+  box <- bind_rows(box, lil_nasa)
+}
+
+```
+
+```{r}
+#write_xlsx(box,data/weather_total.xlsx")
+box = read_xlsx("data/weather_total.xlsx")
+```
+
+
+```{r}
+
+
+box <- box %>%
+  mutate(
+    # Criando a data permitida diretamente com base no estado
+    allowed_date = case_when(
+      state == "MT" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-09-16")), 
+      state == "MS" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-09-16")),
+      state == "GO" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-09-25")),
+      state == "PR" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-09-11")),
+      state == "TO" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-10-01")),
+      state == "DF" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-10-01")),
+      state == "BA" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-10-01")),
+      state == "MG" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-10-01")),
+      state == "SP" ~ as.Date(paste0(format(YYYYMMDD, "%Y"), "-9-16"))
+    ),
+    # Ajustando o ano da allowed_date para casos de janeiro e fevereiro
+    allowed_date = if_else(
+      format(YYYYMMDD, "%m") %in% c("01", "02"), 
+      as.Date(paste0(as.numeric(format(YYYYMMDD, "%Y")) - 1, "-", format(allowed_date, "%m-%d"))),
+      allowed_date
+    ),
+    # Calculando a diferença em dias
+    days_difference = as.numeric(YYYYMMDD - allowed_date)
+  )
+```
+
+# By windows
+
+
+## 0 to 20
+```{r}
+
+#box$mean_sev = box$mean_sev/100
+
+wd_0_20 = box %>% 
+  dplyr::filter(days >=0 & days <= 20)
+
+wd_0_20 = wd_0_20 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+#ma3 <- head(ma, nrow(ma2) - 37)
+#wd_0_20$year = ma2$year # ESTAVA RODANDO ESSE NO INICIO
+
+
+wd_0_20 = wd_0_20 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+corr <-cor.test(x = wd_0_20$RH2M,y = wd_0_20$PRECTOTCORR, method = "spearman")
+corr
+
+#wd_0_20 <- head(wd_0_20, nrow(wd_0_20) - 4)
+
+
+inla_0_20 = inla(epidemic ~T2M + RH2M+PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_0_20,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_0_20)
+```
+
+## 20 to 40
+
+```{r}
+wd_20_40 = box %>% 
+  dplyr::filter(days >= 20 & days <= 40)
+
+
+wd_20_40 = wd_20_40 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_20_40 = wd_20_40 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_20_40 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_20_40,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_20_40)
+```
+
+## 40 to 60
+
+```{r}
+wd_40_60 = box %>% 
+  dplyr::filter(days >= 40 & days <= 60)
+
+wd_40_60 = wd_40_60 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_40_60 = wd_40_60 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_40_60 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_40_60,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_40_60)
+```
+
+
+## 60 to 80
+```{r}
+wd_60_80 = box %>% 
+  dplyr::filter(days >= 60 & days <= 80)
+
+wd_60_80 = wd_60_80 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_60_80 = wd_60_80 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_60_80 = inla(epidemic ~T2M + RH2M+PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_60_80,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_60_80)
+```
+
+
+
+
+## 0 to 80
+```{r}
+wd_0_80 = box %>% 
+  dplyr::filter(days >= 0 & days <= 80)
+
+wd_0_80 = wd_0_80 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_0_80 = wd_0_80 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_0_80 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_0_80,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_0_80)
+```
+
+## 0 to 60
+```{r}
+wd_0_60 = box %>% 
+  dplyr::filter(days >= 0 & days <= 60)
+
+wd_0_60 = wd_0_60 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_0_60 = wd_0_60 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_0_60 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_0_60,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_0_60)
+
+```
+## 0 to 40
+```{r}
+wd_0_40 = box %>% 
+  dplyr::filter(days >= 0 & days <= 40)
+
+wd_0_40 = wd_0_40 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_0_40 = wd_0_40 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_0_40 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_0_40,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_0_40)
+```
+## 20 to 60
+```{r}
+wd_20_60 = box %>% 
+  dplyr::filter(days >= 20 & days <= 60)
+
+wd_20_60 = wd_20_60 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_20_60 = wd_20_60 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_20_60 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_20_60,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_20_60)
+```
+## 20 to 80
+```{r}
+wd_20_80 = box %>% 
+  dplyr::filter(days >= 20 & days <= 80)
+
+wd_20_80 = wd_20_80 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_20_80 = wd_20_80 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_20_80 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_20_80,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_20_80)
+```
+## 40 to 80
+```{r}
+wd_40_80 = box %>% 
+  dplyr::filter(days >= 40 & days <= 80)
+
+wd_40_80 = wd_40_80 %>%
+ dplyr:: group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    year = first(YEAR)
+    ) %>% 
+  dplyr::select(-id)
+
+wd_40_80 = wd_40_80 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+inla_40_80 = inla(epidemic ~T2M + RH2M+ PRECTOTCORR+
+          f(year, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+      #f(days, model = "iid", hyper = list(prec = list(param = c(0.001,0.001)))),
+                        data = wd_40_80,
+                        family = "binomial",
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, config = TRUE))
+
+summary(inla_40_80)
+```
+
+# PREDICTION INLAbru
+
+```{r}
+
+box$days <- rep(0:90, times = 254)
+
+wd_60_8022 = box %>%
+  dplyr::filter(days >= 0 & days <= 40)
+
+
+wd_60_8022 = wd_60_8022 %>%
+  group_by(id) %>% 
+  dplyr::summarise(
+    RH2M = mean(RH2M),
+    T2M_MAX = mean(T2M_MAX),
+    T2M = mean(T2M),
+    T2M_MIN = mean(T2M_MIN),
+    PRECTOTCORR = sum(PRECTOTCORR),
+    mean_sev = mean(mean_sev),
+    ) %>% 
+  dplyr::select(-id)
+
+wd_60_8022 = wd_60_8022 %>% 
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+wd_60_8022 <- head(wd_60_8022, nrow(wd_60_8022) - 40)
+wd_60_8022 %>% 
+  filter(epidemic == 0)
+
+```
+
+```{r}
+wd_0_203 = wd_60_8022 %>% 
+  dplyr::select(-epidemic)
+
+
+inla_0_20 = bru(epidemic ~T2M + RH2M,
+                        data = wd_60_8022,
+                        family = "binomial")
+```
+
+```{r}
+wd_f90 = wd_b90_bio %>%
+  dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
+
+
+
+wd_0_203 = wd_f90 %>% 
+  dplyr::select(-epidemic)
+```
+
+```{r,eval = FALSE, echo = TRUE}
+#set.seed(1234)
+
+
+t = predict(object= inla_0_20, newdata = wd_0_203, formula = ~ c(pred = Intercept + T2M + RH2M), n.samples = 1000)
+
+
+#write_xlsx(t,"data/t.xlsx")
+```
+
+```{r}
+
+t = read_xlsx("data/t.xlsx")
+
+wd_f90$mean = plogis(t$mean)
+
+wd_60_8 = wd_f90 %>% 
+  dplyr::select(epidemic,mean) %>% 
+  mutate(
+    ID = nrow(epidemic)
+  )
+
+wd_60_8 = as.data.frame(wd_60_8)
+
+
+dat_lasso <- data.frame(1, wd_f90$epidemic, plogis(t$mean))
+optimal.thresholds(dat_lasso)
+auc.roc.plot(dat_lasso)
+
+
+cm_rf_052 = confusionMatrix(data = as.factor(as.numeric(wd_f90$mean  > 0.78)),  mode= "everything",  reference = as.factor(wd_f90$epidemic))
+cm_rf_052
+```
+
