@@ -639,11 +639,6 @@ wd_60_8022 = wd_60_8022 %>%
 
 wd_60_8022 = wd_60_8022 %>% 
   dplyr::mutate(epidemic = ifelse(mean_sev >= 0.25, 1, 0))
-
-wd_60_8022 <- head(wd_60_8022, nrow(wd_60_8022) - 40)
-wd_60_8022 %>% 
-  filter(epidemic == 0)
-
 ```
 
 ```{r}
@@ -654,7 +649,30 @@ wd_0_203 = wd_60_8022 %>%
 inla_0_20 = bru(epidemic ~T2M + RH2M,
                         data = wd_60_8022,
                         family = "binomial")
+
+summary(inla_0_20)
 ```
+
+```{r}
+
+wd_60_8022 <- head(wd_60_8022, nrow(wd_60_8022) - 40)
+wd_60_8022 %>% 
+  filter(epidemic == 0)
+```
+
+```{r}
+wd_0_203 = wd_60_8022 %>% 
+  dplyr::select(-epidemic)
+
+
+inla_0_20 = bru(epidemic ~T2M + RH2M,
+                        data = wd_60_8022,
+                        family = "binomial")
+
+summary(inla_0_20)
+```
+
+
 
 ```{r}
 wd_f90 = wd_b90_bio %>%
@@ -678,7 +696,7 @@ t = predict(object= inla_0_20, newdata = wd_0_203, formula = ~ c(pred = Intercep
 
 ```{r}
 
-t = read_xlsx("data/t.xlsx")
+#t = read_xlsx("data/t.xlsx")
 
 wd_f90$mean = plogis(t$mean)
 
