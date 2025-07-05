@@ -267,7 +267,7 @@ box <- box %>%
   )
 ```
 
-# By windows
+# Inference
 
 
 ## 0 to 20
