@@ -5322,11 +5322,57 @@ Posterior summaries for the linear predictor and the fitted values are computed
 <span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>id)</span>
 <span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>wd_60_8022 <span class="ot">=</span> wd_60_8022 <span class="sc">%&gt;%</span> </span>
-<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">epidemic =</span> <span class="fu">ifelse</span>(mean_sev <span class="sc">&gt;=</span> <span class="fl">0.25</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
-<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>wd_60_8022 <span class="ot">&lt;-</span> <span class="fu">head</span>(wd_60_8022, <span class="fu">nrow</span>(wd_60_8022) <span class="sc">-</span> <span class="dv">40</span>)</span>
-<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>wd_60_8022 <span class="sc">%&gt;%</span> </span>
-<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(epidemic <span class="sc">==</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">epidemic =</span> <span class="fu">ifelse</span>(mean_sev <span class="sc">&gt;=</span> <span class="fl">0.25</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>wd_0_203 <span class="ot">=</span> wd_60_8022 <span class="sc">%&gt;%</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>epidemic)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>inla_0_20 <span class="ot">=</span> <span class="fu">bru</span>(epidemic <span class="sc">~</span>T2M <span class="sc">+</span> RH2M,</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> wd_60_8022,</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(inla_0_20)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>inlabru version: 2.12.0
+INLA version: 24.12.11
+Components:
+T2M: main = linear(T2M), group = exchangeable(1L), replicate = iid(1L), NULL
+RH2M: main = linear(RH2M), group = exchangeable(1L), replicate = iid(1L), NULL
+Intercept: main = linear(1), group = exchangeable(1L), replicate = iid(1L), NULL
+Likelihoods:
+  Family: &#39;binomial&#39;
+    Tag: &#39;&#39;
+    Data class: &#39;tbl_df&#39;, &#39;tbl&#39;, &#39;data.frame&#39;
+    Response class: &#39;numeric&#39;
+    Predictor: epidemic ~ .
+    Used components: effects[T2M, RH2M, Intercept], latent[]
+Time used:
+    Pre = 0.226, Running = 0.138, Post = 0.0222, Total = 0.386 
+Fixed effects:
+            mean    sd 0.025quant 0.5quant 0.975quant   mode kld
+T2M        0.207 0.100      0.012    0.207      0.403  0.207   0
+RH2M       0.072 0.021      0.030    0.072      0.114  0.072   0
+Intercept -9.616 3.836    -17.134   -9.616     -2.098 -9.616   0
+
+Deviance Information Criterion (DIC) ...............: 289.23
+Deviance Information Criterion (DIC, saturated) ....: 288.87
+Effective number of parameters .....................: 2.96
+
+Watanabe-Akaike information criterion (WAIC) ...: 289.43
+Effective number of parameters .................: 3.10
+
+Marginal log-Likelihood:  -160.46 
+ is computed 
+Posterior summaries for the linear predictor and the fitted values are computed
+(Posterior marginals needs also &#39;control.compute=list(return.marginals.predictor=TRUE)&#39;)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>wd_60_8022 <span class="ot">&lt;-</span> <span class="fu">head</span>(wd_60_8022, <span class="fu">nrow</span>(wd_60_8022) <span class="sc">-</span> <span class="dv">40</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>wd_60_8022 <span class="sc">%&gt;%</span> </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(epidemic <span class="sc">==</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source type="application/json">
@@ -5336,48 +5382,48 @@ Posterior summaries for the linear predictor and the fitted values are computed
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>wd_0_203 <span class="ot">=</span> wd_60_8022 <span class="sc">%&gt;%</span> </span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>epidemic)</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>inla_0_20 <span class="ot">=</span> <span class="fu">bru</span>(epidemic <span class="sc">~</span>T2M <span class="sc">+</span> RH2M,</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> wd_60_8022,</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>wd_f90 <span class="ot">=</span> wd_b90_bio <span class="sc">%&gt;%</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">epidemic =</span> <span class="fu">ifelse</span>(mean_sev <span class="sc">&gt;=</span> <span class="fl">0.25</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>wd_0_203 <span class="ot">=</span> wd_f90 <span class="sc">%&gt;%</span> </span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>epidemic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#set.seed(1234)</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>t <span class="ot">=</span> <span class="fu">predict</span>(<span class="at">object=</span> inla_0_20, <span class="at">newdata =</span> wd_0_203, <span class="at">formula =</span> <span class="sc">~</span> <span class="fu">c</span>(<span class="at">pred =</span> Intercept <span class="sc">+</span> T2M <span class="sc">+</span> RH2M), <span class="at">n.samples =</span> <span class="dv">1000</span>)</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="co">#write_xlsx(t,&quot;data/t.xlsx&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>t <span class="ot">=</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;data/t.xlsx&quot;</span>)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>wd_f90<span class="sc">$</span>mean <span class="ot">=</span> <span class="fu">plogis</span>(t<span class="sc">$</span>mean)</span>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>wd_0_203 <span class="ot">=</span> wd_60_8022 <span class="sc">%&gt;%</span> </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>epidemic)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>wd_60_8 <span class="ot">=</span> wd_f90 <span class="sc">%&gt;%</span> </span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(epidemic,mean) <span class="sc">%&gt;%</span> </span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">ID =</span> <span class="fu">nrow</span>(epidemic)</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>wd_60_8 <span class="ot">=</span> <span class="fu">as.data.frame</span>(wd_60_8)</span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>dat_lasso <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="dv">1</span>, wd_f90<span class="sc">$</span>epidemic, <span class="fu">plogis</span>(t<span class="sc">$</span>mean))</span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a><span class="fu">optimal.thresholds</span>(dat_lasso)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>inla_0_20 <span class="ot">=</span> <span class="fu">bru</span>(epidemic <span class="sc">~</span>T2M <span class="sc">+</span> RH2M,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> wd_60_8022,</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>wd_f90 <span class="ot">=</span> wd_b90_bio <span class="sc">%&gt;%</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">epidemic =</span> <span class="fu">ifelse</span>(mean_sev <span class="sc">&gt;=</span> <span class="fl">0.25</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>wd_0_203 <span class="ot">=</span> wd_f90 <span class="sc">%&gt;%</span> </span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>epidemic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#set.seed(1234)</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>t <span class="ot">=</span> <span class="fu">predict</span>(<span class="at">object=</span> inla_0_20, <span class="at">newdata =</span> wd_0_203, <span class="at">formula =</span> <span class="sc">~</span> <span class="fu">c</span>(<span class="at">pred =</span> Intercept <span class="sc">+</span> T2M <span class="sc">+</span> RH2M), <span class="at">n.samples =</span> <span class="dv">1000</span>)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a><span class="co">#write_xlsx(t,&quot;data/t.xlsx&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>t <span class="ot">=</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;data/t.xlsx&quot;</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>wd_f90<span class="sc">$</span>mean <span class="ot">=</span> <span class="fu">plogis</span>(t<span class="sc">$</span>mean)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>wd_60_8 <span class="ot">=</span> wd_f90 <span class="sc">%&gt;%</span> </span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(epidemic,mean) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">ID =</span> <span class="fu">nrow</span>(epidemic)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>wd_60_8 <span class="ot">=</span> <span class="fu">as.data.frame</span>(wd_60_8)</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>dat_lasso <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="dv">1</span>, wd_f90<span class="sc">$</span>epidemic, <span class="fu">plogis</span>(t<span class="sc">$</span>mean))</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="fu">optimal.thresholds</span>(dat_lasso)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source type="application/json">
@@ -5385,7 +5431,7 @@ Posterior summaries for the linear predictor and the fitted values are computed
   </script>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">auc.roc.plot</span>(dat_lasso)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">auc.roc.plot</span>(dat_lasso)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -5393,8 +5439,8 @@ Posterior summaries for the linear predictor and the fitted values are computed
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>cm_rf_052 <span class="ot">=</span> <span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(wd_f90<span class="sc">$</span>mean  <span class="sc">&gt;</span> <span class="fl">0.78</span>)),  <span class="at">mode=</span> <span class="st">&quot;everything&quot;</span>,  <span class="at">reference =</span> <span class="fu">as.factor</span>(wd_f90<span class="sc">$</span>epidemic))</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>cm_rf_052</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>cm_rf_052 <span class="ot">=</span> <span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">as.factor</span>(<span class="fu">as.numeric</span>(wd_f90<span class="sc">$</span>mean  <span class="sc">&gt;</span> <span class="fl">0.78</span>)),  <span class="at">mode=</span> <span class="st">&quot;everything&quot;</span>,  <span class="at">reference =</span> <span class="fu">as.factor</span>(wd_f90<span class="sc">$</span>epidemic))</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>cm_rf_052</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Confusion Matrix and Statistics
 

@@ -668,8 +668,6 @@ wd_0_203 = wd_60_8022 %>%
 inla_0_20 = bru(epidemic ~T2M + RH2M,
                         data = wd_60_8022,
                         family = "binomial")
-
-summary(inla_0_20)
 ```
 
 
@@ -696,7 +694,7 @@ t = predict(object= inla_0_20, newdata = wd_0_203, formula = ~ c(pred = Intercep
 
 ```{r}
 
-#t = read_xlsx("data/t.xlsx")
+t = read_xlsx("data/t.xlsx")
 
 wd_f90$mean = plogis(t$mean)
 
